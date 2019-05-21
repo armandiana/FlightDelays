@@ -7,8 +7,10 @@
 package it.polito.tdp.flightdelays;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -51,11 +53,52 @@ public class FlightDelaysController {
 
     @FXML
     void doAnalizzaAeroporti(ActionEvent event) {
+    	//crea un grafo che contiene tutti i voli che collegano almeno due areoporti che hanno distanza minima come quella inserita.
+    	this.txtResult.clear();
+    	
+    	try {
+        	Integer distanza=Integer.parseInt(this.distanzaMinima.getText());
+
+    		this.model.creaGrafo(distanza);
+    		this.txtResult.appendText("Ho creato il grafo con distanza minima: "+distanza+" miglia \n"+
+    		                            "Formato da "+this.model.getGrafo().vertexSet().size()+" vertici e "+
+    				                     this.model.getGrafo().edgeSet().size()+" archi. \n "+this.model.getGrafo().toString());
+    		
+    	}catch(NumberFormatException e) {
+    		
+    		e.printStackTrace();
+    		this.txtResult.appendText("Avete inserito un formato non valido. Riprova! \n");
+    	}
 
     }
 
     @FXML
     void doTestConnessione(ActionEvent event) {
+    	this.txtResult.appendText("*** Testiamo la connessone tra i due areoporti *** \n");
+    	Boolean esisteConnessione=null;
+    	try {
+    		Integer a1=Integer.parseInt(this.cmbBoxAeroportoPartenza.getValue());
+    		Integer a2=Integer.parseInt(this.cmbBoxAeroportoArrivo.getValue());
+    		
+    		esisteConnessione=this.model.testConnessione(a1, a2);
+    		List<Airport>percorso=this.model.trovaPercorso(a1, a2);
+    		
+    		if(esisteConnessione) {
+    			this.txtResult.appendText("E' possibile raggiungere l'areoporto "+this.cmbBoxAeroportoArrivo.getValue()+
+    					" dall'areoporto "+this.cmbBoxAeroportoPartenza.getValue()+"\n");
+    			if(percorso!=null)
+    			this.txtResult.appendText("Un possibile percorso tra i due areoporti potrebbe essere: "+percorso.toString()+"\n");
+    			
+    		}else if(!esisteConnessione){
+    			this.txtResult.appendText("I due areoporti non sono collegati \n");
+    		}
+    		
+    	}catch(NumberFormatException e) {
+    		e.printStackTrace();
+    		this.txtResult.appendText("Avete inserito un formato non valido. Riprova! \n");
+    		throw new RuntimeException("Errore durante l'esecuzione del programma! \n");
+    		
+    	}
 
     }
 
@@ -72,6 +115,11 @@ public class FlightDelaysController {
     
     public void setModel(Model model) {
 		this.model = model;
+	
+		for(Airport a: this.model.loadAllAirports()) {
+			this.cmbBoxAeroportoPartenza.getItems().add(String.valueOf(a.getId()));
+			this.cmbBoxAeroportoArrivo.getItems().add(String.valueOf(a.getId()));
+		}
 	}
 }
 
